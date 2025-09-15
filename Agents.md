@@ -1,10 +1,12 @@
-Normal→Displacement Converter (CPU, Windows 11)
+# Agents.md — Normal→Displacement Converter (CPU, Windows 11)
+
+**Audience:** Code-generating/implementing agents (Codex-like)
 
 **Goal:** Build a **CPU‑only** tool that converts tangent‑space normal maps to **scalar displacement** via **Poisson integration**, with robust handling of UV islands, UDIMs, and multiple UV sets.
 
 **Target OS/Toolchain:** Windows 11, Visual Studio 2022, CMake (vcpkg for deps).
 
-**Scope:** CLI first; clean internal API enabling a future GUI.
+**Scope:** CLI first; **no GPU**; clean internal API enabling a future GUI.
 
 **Primary Output:** EXR displacement map(s). **Default:** single‑channel 32‑bit float EXR (channel name `height`). Optional RGBA with R=height, G/B/A=0.
 
@@ -82,6 +84,8 @@ normal2disp/
     DESIGN.md         # API surfaces for future GUI
   out/                # build outputs (git-ignored)
 ```
+
+**Note (local test data):** A repository-level `testdata/` directory is present with binary assets (e.g., a character FBX and a head normal map). Use these assets for integration/smoke tests where appropriate. For unit/golden or edge-case scenarios that the real assets do not cover, generate tiny, ephemeral fixtures at runtime (e.g., minimal OBJ/MTL and small normal images via OIIO) under a per-test temp folder and clean up afterward. PRs must not add or modify files under `testdata/`. Never commit any generated assets.
 
 ---
 
@@ -301,11 +305,22 @@ Tests: two regions with 2× density → amplitude equalized with metric.
 
 **Additional Tests**
 
+Use `testdata/` for integration/smoke coverage; generate minimal fixtures at runtime for golden/edge-case tests requiring analytic ground truth or specific conditions not represented by the real assets.
+
 * **Channel variants:** 2‑ch (BC5) vs 3‑ch yield matching results within tolerance.
 * **Compression sim:** quantize/perturb channels; compare **raw**, **xyz‑norm**, **xy‑recon** pipelines.
 * **Max‑slope clamp:** near‑horizon normals remain stable; bounded energy.
 * **Determinism:** `--deterministic` bit‑for‑bit across runs/cores; regular mode nearly identical.
 * **Units:** metadata correctness (`metric`/`units`).
+
+## 8A) Local Test Data & PR Rules
+
+* Local assets live under `testdata/` and are expected to be present. Prefer them for integration and I/O smoke tests (e.g., `inspect` on a real mesh, Y-channel guess behavior).
+* Some tests intentionally generate fixtures even when `testdata/` exists (analytic golden cases, BC5 2-channel normals, UDIM tile synthesis, mirrored/overlap UVs, donut islands, near-horizon normals). Keep generated fixtures tiny (≤16×16) and sparse.
+* Discovery and selection: if environment variable `N2D_TESTDATA_DIR` is set, use that; otherwise use repository `testdata/`. Tests may still choose runtime-generated fixtures when the scenario requires ground truth or specific edge conditions.
+* PR policy: do not add or modify binary assets under `testdata/`. Do not commit any generated files. Ensure `.gitignore` ignores `build/` and patterns like `*.exr`, `*.png`, `*.tif`, `*.bin`.
+* Generated fixtures must be written to a per-test temporary directory (e.g., under the CTest working dir) and deleted at test end. Never write inside the repo tree.
+* When available, use the head normal map in `testdata/` to exercise +Y/−Y decoding and normalization policies.
 
 ---
 
