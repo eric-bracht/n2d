@@ -1,0 +1,19 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "n2d",
+  "version-string": "0.1.0",
+  "dependencies": [
+    "eigen3",
+    "onetbb",
+    "openimageio",
+    "assimp",
+    "cli11",
+    "spdlog",
+    "nlohmann-json",
+    "gtest",
+    "tl-expected",
+    "amgcl"
+  ],
+  "builtin-baseline": "TODO",
+  "//": "TODO: replace builtin-baseline with git -C %VCPKG_ROOT% rev-parse HEAD"
+}
